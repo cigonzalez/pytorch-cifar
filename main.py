@@ -12,10 +12,10 @@ import torchvision.transforms as transforms
 
 import os
 import argparse
+import pickle
 
 from models import *
 from utils import progress_bar
-
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
@@ -67,6 +67,7 @@ if device == 'cuda':
     cudnn.benchmark = True
 
 if args.resume:
+    pdb.set_trace()
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
@@ -100,6 +101,14 @@ def train(epoch):
 
         progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    try:
+        epochs = pickle.load(open('./outputs/train_deformable_2.p','rb'))
+    except EOFError:
+        epochs = []
+    epoch = {'train_loss': train_loss/(batch_idx+1), 'acc': 100.*correct/total}
+    epochs.append(epoch)
+    pickle.dump(epochs, open('./outputs/train_deformable_2.p', 'wb'))
+
 
 def test(epoch):
     global best_acc
@@ -121,6 +130,13 @@ def test(epoch):
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                 % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
+        try:
+            epochs = pickle.load(open('./outputs/test_deformable_2.p','rb'))
+        except EOFError:
+            epochs = []
+        epoch = {'test_loss': test_loss/(batch_idx+1), 'acc': 100.*correct/total}
+        epochs.append(epoch)
+        pickle.dump(epochs, open('./outputs/test_deformable_2.p', 'wb'))
     # Save checkpoint.
     acc = 100.*correct/total
     if acc > best_acc:
@@ -136,6 +152,6 @@ def test(epoch):
         best_acc = acc
 
 
-for epoch in range(start_epoch, start_epoch+200):
+for epoch in range(start_epoch, start_epoch+50):
     train(epoch)
     test(epoch)
